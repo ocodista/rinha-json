@@ -2,16 +2,6 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-#root {
-  background: #FFF;
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
 h1 {
   color: #000;
   font-family: Inter;

@@ -25,7 +25,7 @@ export const FileSelector = ({ onValidJsonLoad }: FileSelectorProps) => {
       <label htmlFor="file-upload" className="custom-file-upload">
         Load JSON
       </label>
-      <input accept=".json" id="file-upload" type="file" onChange={handleSelection} />
+      <input value="" accept=".json" id="file-upload" type="file" onChange={handleSelection} />
       {errorMessage && <span id="error-message">{errorMessage}</span>}
     </>
   )

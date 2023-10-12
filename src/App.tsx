@@ -1,53 +1,69 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FileSelector } from './FileSelector'
-import { JsonVisualizer } from './JsonVisualizer';
+import { JsonFileVisualizer } from './JsonVisualizer';
+import { JSONParser } from '@streamparser/json';
+
+const chunkSize = 500;
 
 function App() {
+  const [x, setX] = useState<{ name: string, file: File | undefined }>({
+    name: "",
+    file: undefined
+  })
   const [isLoading, setLoading] = useState(false)
   const [worker, setWorker] = useState<Worker | undefined>(undefined);
-  const [jsonFileProps, setJson] = useState(undefined)
+  const [parsedJson, setJson] = useState<object | undefined>(undefined)
+  const [page, setPage] = useState(0)
+  const [jsonParser, setParser] = useState<JSONParser | null>(null)
 
-  const onValidJsonLoad = (file: File) => {
-    console.log("valid file", file)
-    const reader = new FileReader();
-    reader.onloadstart = () => setLoading(true)
-    reader.onload = () => {
-      const parsed = JSON.parse(reader.result as string)
-      setJson(parsed)
-      console.log("finished", parsed)
-      setLoading(false)
-    };
-    reader.readAsText(file);
+  const onSelectJsonFile = (file: File) => {
+    setX({ name: file.name, file: file })
+    if (!worker) throw new Error("Worker hasn't loaded yet...")
+    worker?.postMessage({ file, chunkSize, currentPage: 0 })
   }
 
-
   useEffect(() => {
+    const parser = new JSONParser();
+    parser.onValue = ({ value }) => {
+      setJson(value as object)
+    };
+    setParser(parser)
     const workerInstance = new Worker('./worker.js');
     setWorker(workerInstance);
     return () => workerInstance.terminate();
   }, []);
 
   useEffect(() => {
-    if (worker) {
-      worker.onmessage = (obj) => {
-        console.log("worker returned", obj.data)
-      };
-    }
-  }, [worker]);
+    if (!worker) return
+    worker.onmessage = ({ data: { chunkText } }) => {
+      if (!chunkText) {
+        setLoading(false)
+        return
+      }
+      jsonParser?.write(chunkText)
+      if (page < 5)
+        setPage(page + 1)
+    };
+  }, [jsonParser, page, worker]);
+
+  useEffect(() => {
+    if (!page) return
+    worker?.postMessage({ file: x.file, chunkSize, currentPage: page })
+  }, [page, worker, x])
 
   if (isLoading)
     return <span>Is Loading...</span>
 
-  if (jsonFileProps) {
-    return <JsonVisualizer json={jsonFileProps} />
+  if (parsedJson) {
+    return <JsonFileVisualizer name={x.name} json={parsedJson} />
   }
 
   return (
-    <>
+    <main className="bg-white flex w-screen h-full flex-col justify-center items-center">
       {isLoading ? <span>loading...</span> :
-        <FileSelector onValidJsonLoad={onValidJsonLoad} />
+        <FileSelector onValidJsonLoad={onSelectJsonFile} />
       }
-    </>
+    </main>
   )
 }
 

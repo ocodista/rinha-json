@@ -1,8 +1,22 @@
 import React from 'react'
 
-interface JsonViewerProps {
-  json: any
+type JsonViewerProps = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  json: Record<string, any>
   depth?: number
+}
+
+type JsonFileVisualizer = JsonViewerProps & {
+  name: string;
+}
+
+export const JsonFileVisualizer = ({ name, ...other }: JsonFileVisualizer) => {
+  return (
+    <>
+      <h1>{name}</h1>
+      <JsonVisualizer {...other} />
+    </>
+  )
 }
 
 export const JsonVisualizer: React.FC<JsonViewerProps> = ({ json, depth = 0 }) => {
