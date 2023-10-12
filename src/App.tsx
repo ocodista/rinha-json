@@ -24,8 +24,15 @@ function App() {
 
   useEffect(() => {
     const parser = new JSONParser();
-    parser.onValue = ({ value }) => {
-      setJson(value as object)
+    parser.onValue = (data) => {
+      const { value, key, stack } = data
+      console.log({ data })
+      // if is object, the key is undefined
+      // is is array, the key is not undefined and the stack, parent and value must be taken care off
+      if (!key) {
+        setJson(value as object)
+      } else
+        setJson(stack)
     };
     setParser(parser)
     const workerInstance = new Worker('./worker.js');
@@ -41,6 +48,7 @@ function App() {
         return
       }
       jsonParser?.write(chunkText)
+      // TODO: Increase page on scroll bottom.
       if (page < 5)
         setPage(page + 1)
     };
