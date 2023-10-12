@@ -1,33 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useState } from 'react'
+import { FileSelector } from './FileSelector'
+import { JsonVisualizer } from './JsonVisualizer';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isLoading, setLoading] = useState(false)
+  const [worker, setWorker] = useState<Worker | undefined>(undefined);
+  const [jsonFileProps, setJson] = useState(undefined)
+
+  const onValidJsonLoad = (file: File) => {
+    console.log("valid file", file)
+    const reader = new FileReader();
+    reader.onloadstart = () => setLoading(true)
+    reader.onload = () => {
+      const parsed = JSON.parse(reader.result as string)
+      setJson(parsed)
+      console.log("finished", parsed)
+      setLoading(false)
+    };
+    reader.readAsText(file);
+  }
+
+
+  useEffect(() => {
+    const workerInstance = new Worker('./worker.js');
+    setWorker(workerInstance);
+    return () => workerInstance.terminate();
+  }, []);
+
+  useEffect(() => {
+    if (worker) {
+      worker.onmessage = (obj) => {
+        console.log("worker returned", obj.data)
+      };
+    }
+  }, [worker]);
+
+  if (isLoading)
+    return <span>Is Loading...</span>
+
+  if (jsonFileProps) {
+    return <JsonVisualizer json={jsonFileProps} />
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {isLoading ? <span>loading...</span> :
+        <FileSelector onValidJsonLoad={onValidJsonLoad} />
+      }
     </>
   )
 }
