@@ -21,7 +21,7 @@ export const FileLoader = ({ onValidJsonLoad }: FileSelectorProps) => {
 
   return (
     <main className="flex flex-col gap-4 items-center">
-      <h1 className="text-black text-center font-bold font-inter text-4xl leading-none">
+      <h1 className="text-black text-center font-bold text-4xl leading-none">
         JSON Tree Viewer
       </h1>
       <h2>
@@ -29,7 +29,7 @@ export const FileLoader = ({ onValidJsonLoad }: FileSelectorProps) => {
       </h2>
       <label
         htmlFor="file-upload"
-        className="custom-file-upload font-inter leading-none text-xl"
+        className="custom-file-upload leading-none text-xl"
       >
         Load JSON
       </label>

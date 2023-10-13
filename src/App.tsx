@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { FileLoader } from "./FileLoader";
-import { JsonFileVisualizer } from "./JsonVisualizer";
 import { JSONParser } from "@streamparser/json";
+import { JsonFileVisualizer } from "./JsonFileVisualizer";
+import { JsonType } from "./json-tree/types";
 
 const chunkSize = 500;
 
@@ -17,7 +18,7 @@ function App() {
     worker: undefined,
   });
   const [isLoading, setLoading] = useState(false);
-  const [parsedJson, setJson] = useState<object | undefined>(undefined);
+  const [parsedJson, setJson] = useState<JsonType | undefined>(undefined);
   const [page, setPage] = useState(0);
 
   const onSelectJsonFile = (file: File) => {
@@ -33,10 +34,9 @@ function App() {
       // if is object, the key is undefined
       // is is array, the key is not undefined and the stack, parent and value must be taken care off
       if (!key) {
-        setJson(value as object);
+        setJson(value as JsonType);
       } else {
-        console.log("handle array!", data);
-        setJson(stack);
+        setJson(stack as unknown as JsonType);
       }
     };
     setUtils({ jsonParser: parser, worker: new Worker("./worker.js") });
@@ -66,9 +66,8 @@ function App() {
 
   return (
     <main
-      className={`bg-white flex w-screen h-full flex-col items-center${
-        showFileForm ? " justify-center" : ""
-      }`}
+      className={`bg-white flex w-screen h-full flex-col items-center${showFileForm ? " justify-center" : ""
+        }`}
     >
       {parsedJson && (
         <JsonFileVisualizer
