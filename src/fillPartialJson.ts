@@ -9,10 +9,10 @@ function count(str: string, char: string) {
 }
 
 export const fillPartialJson = (json: string) => {
-  const lastValidProp = json.lastIndexOf("}")
-  const cleanedJson = json.slice(0, lastValidProp)
-  const openBrackets = count(cleanedJson, "{") 
-  const closedBrackets = count(cleanedJson, "}")
-  const missingBrackets = openBrackets - closedBrackets
-  return cleanedJson+ "}".repeat(missingBrackets)
-}
+  const lastValidProp = json.lastIndexOf("}");
+  const cleanedJson = json.slice(0, lastValidProp);
+  const openBrackets = count(cleanedJson, "{");
+  const closedBrackets = count(cleanedJson, "}");
+  const missingBrackets = openBrackets - closedBrackets;
+  return cleanedJson + "}".repeat(missingBrackets);
+};
