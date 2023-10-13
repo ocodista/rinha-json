@@ -1,5 +1,5 @@
-export type JsonLeafType = string | number | boolean
-export type JsonArrayType = JsonLeafType[]
+export type JsonLeafType = string | number | boolean | null
+export type JsonArrayType = JsonType[]
 export type JsonObjectType = {
   [key: string]: JsonLeafType | JsonArrayType | JsonObjectType
 }

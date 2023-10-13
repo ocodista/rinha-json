@@ -1,4 +1,5 @@
-import { JsonObjectType, JsonTree } from "./JsonTree"
+import { JsonTree } from "./JsonTree"
+import { JsonObjectType } from "./types"
 
 interface JsonObjectProp {
   json: JsonObjectType

@@ -11,11 +11,10 @@ export const JsonTree = ({ json }: JsonTreeProps) => {
   if (Array.isArray(json))
     return <ArrayProp arr={json} />
 
-  if (typeof json === "undefined")
+  if (json === null || typeof json === "undefined")
     return ""
 
   if (typeof json === "object") {
-    if (!json) return ""
     return <JsonObject json={json} />
   }
 
