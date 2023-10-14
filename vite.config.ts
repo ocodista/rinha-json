@@ -7,8 +7,8 @@ export default defineConfig({
   base: "/rinha-json/",
   test: {
     globals: true,
-    environment: 'jsdom',
-    setupFiles: './tests/setup.js'
+    environment: "jsdom",
+    setupFiles: "./tests/setup.js",
   },
   build: {
     rollupOptions: {

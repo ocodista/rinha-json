@@ -18,4 +18,3 @@ export const JsonFileVisualizer = ({ name, ...other }: JsonFileVisualizer) => {
     </section>
   );
 };
-

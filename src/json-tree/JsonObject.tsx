@@ -1,19 +1,19 @@
-import { JsonTree } from "./JsonTree"
-import { JsonObjectType } from "./types"
+import { JsonTree } from "./JsonTree";
+import { JsonObjectType } from "./types";
 
 interface JsonObjectProp {
-  json: JsonObjectType
+  json: JsonObjectType;
 }
 export const JsonObject = ({ json }: JsonObjectProp) => {
-  const props = Object.keys(json)
+  const props = Object.keys(json);
 
   return props.map((prop) => {
-    const right = json[prop]
+    const right = json[prop];
     return (
       <div key={prop}>
         <span aria-label={prop}>{`${prop}: `}</span>
         <JsonTree json={right} />
       </div>
-    )
-  })
-}
+    );
+  });
+};

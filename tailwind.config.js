@@ -4,11 +4,11 @@ export default {
   theme: {
     extend: {
       textColor: {
-        prop: '#4E9590',
-        string: '#000',
-        number: '#BFBFBF',
-        array: '#F2CAB8'
-      }
+        prop: "#4E9590",
+        string: "#000",
+        number: "#BFBFBF",
+        array: "#F2CAB8",
+      },
     },
   },
   plugins: [],
