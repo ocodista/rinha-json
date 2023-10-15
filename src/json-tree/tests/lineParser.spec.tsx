@@ -1,4 +1,4 @@
-import { lineParser } from "../lineParser";
+import { lineParser } from "../line-parser/lineParser";
 
 describe("line parser", () => {
   it("converts simple key: string value:string json to prop + str-value span html", () => {
@@ -22,6 +22,12 @@ describe("line parser", () => {
   it("converts key:string value:bool to prop + boolean-value span html", () => {
     expect(lineParser(`{ "isOK": true }`)).toBe(
       `<span aria-label="prop-isOK">isOK: </span><span aria-label="true">true</span>`,
+    );
+  });
+
+  it("converts key:string value:object to prop + object recursive rendering html", () => {
+    expect(lineParser(`{ "user": { "name": "John", "age": 30 } }`)).toBe(
+      `<span aria-label="prop-user">user: </span><span aria-label="object"><span aria-label="prop-name">name: </span><span aria-label="John">"John"</span><span aria-label="prop-age">age: </span><span aria-label="30">30</span></span>`,
     );
   });
 });
