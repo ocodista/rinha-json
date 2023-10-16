@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { RinhaParser, htmlByType, valueType } from "./manualTree.js";
+import { RinhaParser, htmlByType, valueType } from "./manualJsonParser.js";
 
 const parse = (str) => new RinhaParser().parse(str);
 
