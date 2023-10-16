@@ -23,10 +23,10 @@ const STARTING_VALUE_REGEX = /("|t|f|[0-9]|n|{)/;
 const OBJ_PROP_OR_END_REGEX = /[},]/;
 
 export class RinhaParser {
-  position = 0;
   buffer = "";
-  json = "";
   htmlTags = [];
+  json = "";
+  position = 0;
 
   construct() {}
 
