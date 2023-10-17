@@ -22,6 +22,7 @@ const jsonMocks = {
   boolean: {
     input: JSON.stringify({ isWorking: true }),
     output: [
+      htmlByType[valueType.objStart](),
       htmlByType[valueType.key]("isWorking"),
       htmlByType[valueType.notString]("true"),
     ],
@@ -29,6 +30,7 @@ const jsonMocks = {
   string: {
     input: JSON.stringify({ name: "Caio" }),
     output: [
+      htmlByType[valueType.objStart](),
       htmlByType[valueType.key]("name"),
       htmlByType[valueType.string]("Caio"),
     ],
@@ -36,6 +38,7 @@ const jsonMocks = {
   number: {
     input: JSON.stringify({ age: 25 }),
     output: [
+      htmlByType[valueType.objStart](),
       htmlByType[valueType.key]("age"),
       htmlByType[valueType.notString](25),
     ],
@@ -91,6 +94,7 @@ describe("checkpoint with object", () => {
   // assert.doesNotThrow(() => parser.parse(completion));
   // assert.equal(parser.parse(completion).length, 5);
 });
+
 describe.skip("checkpoint with array", () => {
   test("set to last start of array", () => {
     const incomplete = '{ "rows": [ 1, ';
@@ -107,30 +111,6 @@ Object.keys(jsonMocks).forEach((key) => {
     assert.doesNotThrow(() => {
       assert.deepEqual(parse(jsonMocks[key].input), jsonMocks[key].output);
     });
-  });
-
-  test("parses JSON with number", () => {
-    assert.doesNotThrow(() => {
-      assert.deepEqual(parse(jsonMocks.number.input), jsonMocks.number.output);
-    });
-  });
-});
-
-describe("json string prop", () => {
-  const result = parse(jsonMocks.string.input);
-  test("does not throws", () => {
-    assert.doesNotThrow(() => {
-      parse(jsonMocks.string.input);
-    });
-  });
-  test("returns two html tags (key and value)", () => {
-    assert.equal(result.length, 2);
-  });
-  test("returns key html first", () => {
-    assert.equal(result[0], htmlByType[valueType.key]("name"));
-  });
-  test("returns string html second", () => {
-    assert.equal(result[1], htmlByType[valueType.string]("Caio"));
   });
 });
 
@@ -172,6 +152,18 @@ describe("nested props", () => {
     const parser = new RinhaParser();
     parser.parse('{ "a": [{ "b": [');
     assert.equal(parser.depth, 4);
+  });
+
+  it("returns html tags", () => {
+    const nestedJson = { a: { b: 1 } };
+    const parser = parseNew(JSON.stringify(nestedJson));
+    assert.deepEqual(parser.htmlTags, [
+      htmlByType[valueType.objStart](),
+      htmlByType[valueType.key]("a"),
+      htmlByType[valueType.objStart](),
+      htmlByType[valueType.key]("b"),
+      htmlByType[valueType.notString](1),
+    ]);
   });
 });
 

@@ -14,6 +14,7 @@ export const htmlByType = {
   [valueType.string]: (value) => `<span class="json-string">"${value}"</span>`,
   [valueType.notString]: (value) => `<span class="json-value">${value}</span>`,
   [valueType.arrayStart]: () => `<span class="array-start">[</span>`,
+  [valueType.objStart]: () => `<span class="object-start">[</span>`,
 };
 
 const INVALID_JSON = "JSON is invalid.";
@@ -119,7 +120,7 @@ export class RinhaParser {
     while (key.at(-1) !== STRING_INDICATOR) {
       key += this.readNextChar();
     }
-    key = key.slice(0, -1); // remove last " from key
+    key = key.slice(0, -1);
     this.expect(STRING_INDICATOR);
     return key;
   }
@@ -177,6 +178,7 @@ export class RinhaParser {
 
   parseObject() {
     this.expect(OBJ_START);
+    this.htmlTags.push(htmlByType[valueType.objStart]());
     this.depth++;
     this.checkpoint = this.position;
     let endToken = "";
