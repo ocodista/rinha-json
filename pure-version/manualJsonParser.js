@@ -21,11 +21,11 @@ const STRING_INDICATOR = '"';
 const KEY_END_INDICATOR = ":";
 const ARRAY_START = "[";
 const ARRAY_END = "]";
-const ARRAY_END_OR_COMMA = /[\],]/;
+const ARRAY_END_OR_COMMA = "],";
 const PROP_SEPARATOR = ",";
-const JSON_START_REGEX = /[{[]/;
-const VALUE_START_REGEX = /"|t|f|n|[0-9]|{|\[/;
-const OBJ_END_OR_COMMA = /[},]/;
+const JSON_START_OPTIONS = "{[";
+const VALUE_START_OPTIONS = '"tfn{[0123456789';
+const OBJ_END_OR_COMMA = "},";
 const OBJ_START = "{";
 const OBJ_END = "}";
 
@@ -75,7 +75,6 @@ export class RinhaParser {
       let number = this.char();
       this.readNextChar();
       number += this.readUntil(options);
-      console.log({ number });
 
       if (isNaN(number)) throw new Error("Invalid number at: " + this.position);
 
@@ -126,7 +125,7 @@ export class RinhaParser {
   }
 
   readValue() {
-    const firstChar = this.match(VALUE_START_REGEX);
+    const firstChar = this.matchStr(VALUE_START_OPTIONS);
     const handler =
       this.#valueReaders[firstChar] || this.#valueReaders["default"];
     const result = handler();
@@ -147,17 +146,17 @@ export class RinhaParser {
       const expected = nextChars[i];
       if (this.char() !== expected) {
         // TODO: uncomment this to debug
-        console.log({ char: this.char(), expected });
+        //console.log({ char: this.char(), expected });
         throw new Error("Expected " + expected + ", received " + this.char());
       }
       this.readNextChar();
     }
   }
 
-  match(expectedRegex) {
+  matchStr(expectedStr) {
     let char = this.char();
-    if (!expectedRegex.test(this.char())) {
-      throw new Error(`Did not match ${expectedRegex}, current: ` + char);
+    if (expectedStr.indexOf(char) === -1) {
+      throw new Error(`Did not match ${expectedStr}, current: ` + char);
     }
     return char;
   }
@@ -170,7 +169,7 @@ export class RinhaParser {
     let endOrComma;
     do {
       this.readValue();
-      endOrComma = this.match(ARRAY_END_OR_COMMA);
+      endOrComma = this.matchStr(ARRAY_END_OR_COMMA);
     } while (endOrComma !== ARRAY_END);
     this.expect(ARRAY_END);
     this.depth--;
@@ -188,7 +187,7 @@ export class RinhaParser {
       this.expect(KEY_END_INDICATOR);
       this.ignoreSpace();
       this.readValue();
-      endToken = this.match(OBJ_END_OR_COMMA);
+      endToken = this.matchStr(OBJ_END_OR_COMMA);
       this.readNextChar();
     } while (endToken === PROP_SEPARATOR);
     this.depth--;
@@ -199,7 +198,7 @@ export class RinhaParser {
     this.json = str;
     this.position = 0;
     try {
-      const startToken = this.match(JSON_START_REGEX);
+      const startToken = this.matchStr(JSON_START_OPTIONS);
       this.ignoreSpace();
       if (startToken === OBJ_START) {
         this.parseObject();
@@ -208,7 +207,6 @@ export class RinhaParser {
       }
     } catch (err) {
       if (this.position < this.json.length) throw err;
-      console.log("Incomplete JSON (failed suppress!)");
     }
     return this.htmlTags;
   }

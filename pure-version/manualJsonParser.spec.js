@@ -78,15 +78,16 @@ test.skip("save rest of string to persistance if json ends before closing key", 
   assert.equal(tempParser.garbage, 0);
 });
 
-describe.skip("checkpoint with object", () => {
+describe("checkpoint with object", () => {
   const incomplete = '{ "city": "João Pessoa", "info": { "temperature": ';
-  const completion = "40 } }";
+  //const completion = "40 } }";
   const parser = new RinhaParser();
   parser.parse(incomplete);
-  test.only("defines checkpoint as the position of the last {", () => {
-    assert.equal(parser.checkpoint, 32);
+  it("defines checkpoint as the position of the last {", () => {
+    const lastOpenArrayPosition = incomplete.lastIndexOf("{") + 1;
+    assert.equal(parser.checkpoint, lastOpenArrayPosition);
   });
-  // assert.equal(parser.garbage, '{{ "temperature": ');
+
   // assert.doesNotThrow(() => parser.parse(completion));
   // assert.equal(parser.parse(completion).length, 5);
 });
