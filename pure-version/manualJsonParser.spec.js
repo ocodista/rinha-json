@@ -19,6 +19,22 @@ describe("JSON Start", () => {
 });
 
 const jsonMocks = {
+  array: {
+    input: JSON.stringify([1, 2, 3]),
+    output: [
+      htmlByType[valueType.arrayStart](),
+      htmlByType[valueType.arrayIndex](0),
+      htmlByType[valueType.notString](1),
+      htmlByType[valueType.arrayIndex](1),
+      htmlByType[valueType.notString](2),
+      htmlByType[valueType.arrayIndex](2),
+      htmlByType[valueType.notString](3),
+    ],
+  },
+  objectProp: {
+    input: JSON.stringify({ a: { b: { c: "1", d: 2, e: true } } }),
+    output: [htmlByType[valueType.key]("a")],
+  },
   boolean: {
     input: JSON.stringify({ isWorking: true }),
     output: [
@@ -154,7 +170,7 @@ describe("nested props", () => {
     assert.equal(parser.depth, 4);
   });
 
-  it("returns html tags", () => {
+  it("returns right html tags for nested json object", () => {
     const nestedJson = { a: { b: 1 } };
     const parser = parseNew(JSON.stringify(nestedJson));
     assert.deepEqual(parser.htmlTags, [
@@ -165,6 +181,8 @@ describe("nested props", () => {
       htmlByType[valueType.notString](1),
     ]);
   });
+
+  it("returns right html tags for array prop");
 });
 
 // describe("json numeric prop");

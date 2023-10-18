@@ -1,9 +1,9 @@
-/* eslint-disable no-case-declarations */
 export const valueType = {
   key: "key",
   string: "string",
   notString: "notString",
   arrayStart: "arrayStart",
+  arrayIndex: "arrayIndex",
   objStart: "objStart",
 };
 
@@ -14,6 +14,8 @@ export const htmlByType = {
   [valueType.string]: (value) => `<span class="json-string">"${value}"</span>`,
   [valueType.notString]: (value) => `<span class="json-value">${value}</span>`,
   [valueType.arrayStart]: () => `<span class="array-start">[</span>`,
+  [valueType.arrayIndex]: (index) =>
+    `<span class="array-index">${index}: </span>`,
   [valueType.objStart]: () => `<span class="object-start">[</span>`,
 };
 
@@ -167,10 +169,15 @@ export class RinhaParser {
     this.depth++;
     this.htmlTags.push(htmlByType[valueType.arrayStart]());
     this.checkpoint = this.position;
-    let endOrComma;
+    let endOrComma,
+      index = 0;
     do {
+      this.htmlTags.push(htmlByType[valueType.arrayIndex](index++));
       this.readValue();
       endOrComma = this.matchStr(ARRAY_END_OR_COMMA);
+      if (endOrComma === ",") {
+        this.expect(",");
+      }
     } while (endOrComma !== ARRAY_END);
     this.expect(ARRAY_END);
     this.depth--;
