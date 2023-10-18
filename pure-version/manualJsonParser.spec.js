@@ -33,7 +33,19 @@ const jsonMocks = {
   },
   objectProp: {
     input: JSON.stringify({ a: { b: { c: "1", d: 2, e: true } } }),
-    output: [htmlByType[valueType.key]("a")],
+    output: [
+      htmlByType[valueType.objStart](),
+      htmlByType[valueType.key]("a"),
+      htmlByType[valueType.objStart](),
+      htmlByType[valueType.key]("b"),
+      htmlByType[valueType.objStart](),
+      htmlByType[valueType.key]("c"),
+      htmlByType[valueType.string]("1"),
+      htmlByType[valueType.key]("d"),
+      htmlByType[valueType.notString](2),
+      htmlByType[valueType.key]("e"),
+      htmlByType[valueType.notString](true),
+    ],
   },
   boolean: {
     input: JSON.stringify({ isWorking: true }),
