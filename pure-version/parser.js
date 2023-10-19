@@ -203,7 +203,6 @@ export class RinhaParser {
     this.expect(ARRAY_END);
     this.depth--;
     this.htmlTags.push(htmlByType[valueType.arrayEnd]);
-    console.log("PUSHED!!!!");
   }
 
   openObject() {

@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon",
-    "start": "http-server ."
+    "start": "http-server .",
+    "test": "node --test *.spec.js"
   },
   "author": "Caio Borghi",
   "license": "UNLICENSED",
