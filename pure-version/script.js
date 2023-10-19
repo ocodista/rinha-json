@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
   elements.jsonTree = document.getElementById("json-tree");
 
   worker.onmessage = ({ data: { treeHTML } }) => {
-    console.log(treeHTML);
     hide(elements.fileSelector);
     const filePageHTML = `
       <section id="tree-page" 
@@ -52,7 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
         </main>
       </section>
     `;
+    console.time("update DOM");
     elements.jsonTree.insertAdjacentHTML("beforeend", filePageHTML);
+    console.timeEnd("update DOM");
   };
   const fileUpload = document.getElementById("file-upload");
 

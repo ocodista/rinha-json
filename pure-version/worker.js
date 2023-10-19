@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { lineParser } from "./parser.js";
-import { jsonToHTML } from "./jsonTree.js";
+import { RinhaParser } from "./parser.js";
 
+const parser = new RinhaParser();
 onmessage = function ({ data }) {
   const { file, chunkSize, currentPage } = data;
   const pages = Math.ceil(file.size / chunkSize);
@@ -14,6 +14,7 @@ function parseChunk({ currentPage, pages, chunkSize, file }) {
     return;
   }
 
+  console.time("read chunk");
   // Calculate the byte range to read
   const startByte = currentPage * chunkSize;
   const endByte = startByte + chunkSize;
@@ -25,9 +26,13 @@ function parseChunk({ currentPage, pages, chunkSize, file }) {
   const reader = new FileReader();
   reader.onload = function () {
     const text = reader.result;
+    console.timeEnd("read chunk");
+    console.time("parse text");
+    const html = parser.parse(text);
+    console.timeEnd("parse text");
     postMessage({
       chunkText: text,
-      treeHTML: jsonToHTML(text),
+      treeHTML: html.join(""),
       lastValidPropOffset: text.lastIndexOf("}") + startByte,
     });
   };

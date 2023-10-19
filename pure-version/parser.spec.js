@@ -1,7 +1,81 @@
 import { it, test, describe } from "node:test";
 import assert from "node:assert";
-import { RinhaParser, htmlByType, valueType } from "./manualJsonParser.js";
+import { RinhaParser, htmlByType, valueType } from "./parser.js";
 
+const testData = {
+  array: {
+    input: JSON.stringify([1, 2, 3]),
+    output: [
+      htmlByType[valueType.arrayStart],
+      htmlByType[valueType.arrayIndex](0),
+      htmlByType[valueType.notString](1),
+      htmlByType[valueType.arrayIndex](1),
+      htmlByType[valueType.notString](2),
+      htmlByType[valueType.arrayIndex](2),
+      htmlByType[valueType.notString](3),
+      htmlByType[valueType.arrayEnd],
+    ],
+  },
+  startsWithArray: {
+    input: JSON.stringify([1, 2, 3]),
+    output: [
+      htmlByType[valueType.arrayStart],
+      htmlByType[valueType.arrayIndex](0),
+      htmlByType[valueType.notString](1),
+      htmlByType[valueType.arrayIndex](1),
+      htmlByType[valueType.notString](2),
+      htmlByType[valueType.arrayIndex](2),
+      htmlByType[valueType.notString](3),
+      htmlByType[valueType.arrayEnd],
+    ],
+  },
+  nestedObject: {
+    input: JSON.stringify({ a: { b: { c: "1", d: 2, e: true } } }),
+    output: [
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("a"),
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("b"),
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("c"),
+      htmlByType[valueType.string]("1"),
+      htmlByType[valueType.key]("d"),
+      htmlByType[valueType.notString](2),
+      htmlByType[valueType.key]("e"),
+      htmlByType[valueType.notString](true),
+      htmlByType[valueType.objEnd],
+      htmlByType[valueType.objEnd],
+      htmlByType[valueType.objEnd],
+    ],
+  },
+  boolean: {
+    input: JSON.stringify({ isWorking: true }),
+    output: [
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("isWorking"),
+      htmlByType[valueType.notString]("true"),
+      htmlByType[valueType.objEnd],
+    ],
+  },
+  string: {
+    input: JSON.stringify({ name: "Caio" }),
+    output: [
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("name"),
+      htmlByType[valueType.string]("Caio"),
+      htmlByType[valueType.objEnd],
+    ],
+  },
+  number: {
+    input: JSON.stringify({ age: 25 }),
+    output: [
+      htmlByType[valueType.objStart],
+      htmlByType[valueType.key]("age"),
+      htmlByType[valueType.notString](25),
+      htmlByType[valueType.objEnd],
+    ],
+  },
+};
 const parse = (str) => new RinhaParser().parse(str);
 
 describe("JSON Start", () => {
@@ -18,61 +92,6 @@ describe("JSON Start", () => {
   });
 });
 
-const jsonMocks = {
-  array: {
-    input: JSON.stringify([1, 2, 3]),
-    output: [
-      htmlByType[valueType.arrayStart](),
-      htmlByType[valueType.arrayIndex](0),
-      htmlByType[valueType.notString](1),
-      htmlByType[valueType.arrayIndex](1),
-      htmlByType[valueType.notString](2),
-      htmlByType[valueType.arrayIndex](2),
-      htmlByType[valueType.notString](3),
-    ],
-  },
-  objectProp: {
-    input: JSON.stringify({ a: { b: { c: "1", d: 2, e: true } } }),
-    output: [
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("a"),
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("b"),
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("c"),
-      htmlByType[valueType.string]("1"),
-      htmlByType[valueType.key]("d"),
-      htmlByType[valueType.notString](2),
-      htmlByType[valueType.key]("e"),
-      htmlByType[valueType.notString](true),
-    ],
-  },
-  boolean: {
-    input: JSON.stringify({ isWorking: true }),
-    output: [
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("isWorking"),
-      htmlByType[valueType.notString]("true"),
-    ],
-  },
-  string: {
-    input: JSON.stringify({ name: "Caio" }),
-    output: [
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("name"),
-      htmlByType[valueType.string]("Caio"),
-    ],
-  },
-  number: {
-    input: JSON.stringify({ age: 25 }),
-    output: [
-      htmlByType[valueType.objStart](),
-      htmlByType[valueType.key]("age"),
-      htmlByType[valueType.notString](25),
-    ],
-  },
-};
-
 describe("read until", () => {
   const parser = new RinhaParser();
   parser.json = "{ abcdefg }";
@@ -82,7 +101,7 @@ describe("read until", () => {
 
 describe("expect", () => {
   const globalParser = new RinhaParser();
-  globalParser.json = jsonMocks.string.input;
+  globalParser.json = testData.string.input;
   globalParser.position = 0;
 
   test("increases position if token is found next", () => {
@@ -109,20 +128,6 @@ test.skip("save rest of string to persistance if json ends before closing key", 
   assert.equal(tempParser.garbage, 0);
 });
 
-describe("checkpoint with object", () => {
-  const incomplete = '{ "city": "João Pessoa", "info": { "temperature": ';
-  //const completion = "40 } }";
-  const parser = new RinhaParser();
-  parser.parse(incomplete);
-  it("defines checkpoint as the position of the last {", () => {
-    const lastOpenArrayPosition = incomplete.lastIndexOf("{") + 1;
-    assert.equal(parser.checkpoint, lastOpenArrayPosition);
-  });
-
-  // assert.doesNotThrow(() => parser.parse(completion));
-  // assert.equal(parser.parse(completion).length, 5);
-});
-
 describe.skip("checkpoint with array", () => {
   test("set to last start of array", () => {
     const incomplete = '{ "rows": [ 1, ';
@@ -134,10 +139,27 @@ describe.skip("checkpoint with array", () => {
   });
 });
 
-Object.keys(jsonMocks).forEach((key) => {
+describe("checkpoint with object", () => {
+  const incomplete = '{ "city": "João Pessoa", "info": { "temperature": ';
+  const completion = "40 } }";
+  const parser = new RinhaParser();
+  it("defines checkpoint as the position of the last {", () => {
+    parser.parse(incomplete);
+    const lastOpenArrayPosition = incomplete.lastIndexOf("{") + 1;
+    assert.equal(parser.checkpoint, lastOpenArrayPosition);
+  });
+
+  it.skip("parses sequentially", () => {
+    parser.parse(incomplete);
+    assert.doesNotThrow(() => parser.parse(completion));
+  });
+  // assert.equal(parser.parse(completion).length, 5);
+});
+
+Object.keys(testData).forEach((key) => {
   test(`parse JSON with ${key} prop`, () => {
     assert.doesNotThrow(() => {
-      assert.deepEqual(parse(jsonMocks[key].input), jsonMocks[key].output);
+      assert.deepEqual(parse(testData[key].input), testData[key].output);
     });
   });
 });
@@ -186,19 +208,15 @@ describe("nested props", () => {
     const nestedJson = { a: { b: 1 } };
     const parser = parseNew(JSON.stringify(nestedJson));
     assert.deepEqual(parser.htmlTags, [
-      htmlByType[valueType.objStart](),
+      htmlByType[valueType.objStart],
       htmlByType[valueType.key]("a"),
-      htmlByType[valueType.objStart](),
+      htmlByType[valueType.objStart],
       htmlByType[valueType.key]("b"),
       htmlByType[valueType.notString](1),
+      htmlByType[valueType.objEnd],
+      htmlByType[valueType.objEnd],
     ]);
   });
 
   it("returns right html tags for array prop");
 });
-
-// describe("json numeric prop");
-// describe("json boolean prop");
-// describe("json array prop");
-// describe("json null prop");
-// describe("json object prop");
