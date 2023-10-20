@@ -9,26 +9,6 @@ export const valueType = {
   objEnd: "objEnd",
 };
 
-const keyCss = `color: #4E9590;`;
-const stringCss = `color: #000;`;
-const arrayBoundariesCss = `color: #F2CAB8;`;
-const arrayIndexCss = `color: #BFBFBF;`;
-
-export const htmlByType = {
-  [valueType.key]: (key) => `
-    <span style="${keyCss}">${key}</span>
-  `,
-  [valueType.string]: (value) => `<span style="${stringCss}">"${value}"</span>`,
-  [valueType.notString]: (value) =>
-    `<span style="${stringCss}">${value}</span>`,
-  [valueType.arrayStart]: `<span style="${arrayBoundariesCss}">[</span>`,
-  [valueType.arrayEnd]: `<span style="${arrayBoundariesCss}">]</span>`,
-  [valueType.arrayIndex]: (index) =>
-    `<span style="${arrayIndexCss}">${index}: </span>`,
-  [valueType.objStart]: `<span class="object-start">{</span>`,
-  [valueType.objEnd]: `<span class="object-end">}</span>`,
-};
-
 const ARRAY_END = "]";
 const ARRAY_END_OR_COMMA = "],";
 const ARRAY_OBJ_START = "[{";
@@ -49,6 +29,28 @@ export class RinhaParser {
   htmlTags = [];
   json = "";
   position = 0;
+  #arrayBoundariesCss = `color: #F2CAB8; margin-left: ${this.depth * 8}px`;
+  #arrayIndexCss = `color: #BFBFBF; margin-left: ${this.depth * 8}px`;
+  #keycss = `color: #4E9590; margin-left: ${this.depth * 8}px`;
+  #stringCss = `color: #000; margin-left: ${this.depth * 8}px`;
+  #objCss = `margin-left: ${this.depth * 8}px`;
+  #html = {
+    [valueType.key]: (key) => `
+      <span style="${this.#keycss}">${key}: </span>
+    `,
+    [valueType.string]: (value) =>
+      `<span style="${this.#stringCss}">"${value}"</span>`,
+    [valueType.notString]: (value) =>
+      `<span style="${this.#stringCss}">${value}</span>`,
+    [valueType.arrayStart]: `<span style="${
+      this.#arrayBoundariesCss
+    }">[</span>`,
+    [valueType.arrayEnd]: `<span style="${this.#arrayBoundariesCss}">]</span>`,
+    [valueType.arrayIndex]: (index) =>
+      `<span style="${this.#arrayIndexCss}">${index}: </span>`,
+    [valueType.objStart]: `<span style="${this.#objCss}">{</span>`,
+    [valueType.objEnd]: `<span style="${this.#objCss}">}</span>`,
+  };
   #valueReaders = {
     f: () => {
       this.expect("false");
@@ -128,24 +130,33 @@ export class RinhaParser {
 
   readKey() {
     this.expect(QUOTE);
-    let key = this.char();
-    while (key.at(-1) !== QUOTE) {
-      key += this.readNextChar();
+    this.key = this.char();
+    while (this.key.at(-1) !== QUOTE) {
+      this.key += this.readNextChar();
     }
-    key = key.slice(0, -1);
+    this.key = this.key.slice(0, -1);
     this.expect(QUOTE);
-    this.htmlTags.push(htmlByType[valueType.key](key));
     this.ignoreSpace();
   }
 
   readValue() {
     this.ignoreSpace();
     const firstChar = this.matchStr(VALUE_START);
+    const key = this.key;
     const handler =
       this.#valueReaders[firstChar] || this.#valueReaders["default"];
+
+    if (firstChar === OBJ_START) {
+      this.htmlTags.push(this.#html[valueType.key](key));
+    }
+
     const result = handler();
     if (result) {
-      this.htmlTags.push(htmlByType[result.type](result.value));
+      this.htmlTags.push(
+        `<div style=\"display: flex; gap: 8px\">${this.#html[valueType.key](
+          this.key,
+        )}${this.#html[result.type](result.value)}</div>`,
+      );
     }
     this.ignoreSpace();
   }
@@ -188,12 +199,12 @@ export class RinhaParser {
   parseArray() {
     this.expect(ARRAY_START);
     this.depth++;
-    this.htmlTags.push(htmlByType[valueType.arrayStart]);
+    this.htmlTags.push(this.#html[valueType.arrayStart]);
     this.checkpoint = this.position;
     let endOrComma,
       index = 0;
     do {
-      this.htmlTags.push(htmlByType[valueType.arrayIndex](index++));
+      this.htmlTags.push(this.#html[valueType.arrayIndex](index++));
       this.readValue();
       endOrComma = this.matchStr(ARRAY_END_OR_COMMA);
       if (endOrComma === ",") {
@@ -202,19 +213,19 @@ export class RinhaParser {
     } while (endOrComma !== ARRAY_END);
     this.expect(ARRAY_END);
     this.depth--;
-    this.htmlTags.push(htmlByType[valueType.arrayEnd]);
+    this.htmlTags.push(this.#html[valueType.arrayEnd]);
   }
 
   openObject() {
     this.expect(OBJ_START);
-    this.htmlTags.push(htmlByType[valueType.objStart]);
+    this.htmlTags.push(this.#html[valueType.objStart]);
     this.depth++;
     this.checkpoint = this.position;
   }
 
   closeObject() {
     this.depth--;
-    this.htmlTags.push(htmlByType[valueType.objEnd]);
+    this.htmlTags.push(this.#html[valueType.objEnd]);
   }
 
   parseObject() {

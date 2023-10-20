@@ -1,4 +1,4 @@
 {
   "watch": ["*.html", "*.js"],
-  "exec": "yarn start"
+  "exec": "yarn start &"
 }
