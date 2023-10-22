@@ -22,34 +22,51 @@ const OBJ_START = "{";
 const QUOTE = '"';
 const VALUE_START = '"tfn{[0123456789';
 
+const keycss = (depth) =>
+  `color: #4E9590; margin-left: ${depth * TREE_TAB_SIZE}px`;
+const Key = (key, depth) =>
+  `<span aria-title='key-${key}' style="${keycss(depth)}">${key}: </span>`;
+
+const Parent = {
+  Object: "Object",
+  Array: "Array",
+};
+
+const TREE_TAB_SIZE = 20;
+
 export class RinhaParser {
+  arrayIndex = 0;
   buffer = "";
   checkpoint = 0;
   depth = 0;
+  parent = Parent.Object;
   htmlTags = [];
   json = "";
   position = 0;
-  #arrayBoundariesCss = `color: #F2CAB8; margin-left: ${this.depth * 8}px`;
-  #arrayIndexCss = `color: #BFBFBF; margin-left: ${this.depth * 8}px`;
-  #keycss = `color: #4E9590; margin-left: ${this.depth * 8}px`;
-  #stringCss = `color: #000; margin-left: ${this.depth * 8}px`;
-  #objCss = `margin-left: ${this.depth * 8}px`;
+  #arrayBoundariesCss = (depth) =>
+    `color: #F2CAB8; margin-left: ${depth * TREE_TAB_SIZE}px`;
+  #arrayIndexCss = (depth) =>
+    `color: #BFBFBF; margin-left: ${depth * TREE_TAB_SIZE}px`;
+  #arrayStartCss = `color: #F2CAB8`;
+  #stringCss = `color: #000; margin-left: ${this.depth * TREE_TAB_SIZE}px`;
+  #objCss = `margin-left: ${this.depth * TREE_TAB_SIZE}px`;
   html = {
-    [valueType.key]: (key) => `
-      <span style="${this.#keycss}">${key}: </span>
-    `,
+    [valueType.key]: (key) => Key(key, this.depth),
     [valueType.string]: (value) =>
       `<span style="${this.#stringCss}">"${value}"</span>`,
     [valueType.notString]: (value) =>
       `<span style="${this.#stringCss}">${value}</span>`,
-    [valueType.arrayStart]: `<span style="${
-      this.#arrayBoundariesCss
-    }">[</span>`,
-    [valueType.arrayEnd]: `<span style="${this.#arrayBoundariesCss}">]</span>`,
+    [valueType.arrayStart]: () => `
+    <div class="array-start" style=${this.#arrayStartCss}>
+      ${this.html[valueType.key](this.key)}
+    <span style="${this.#arrayStartCss}">[</span>
+    </div> `,
+    [valueType.arrayEnd]: () =>
+      `<span style="${this.#arrayBoundariesCss(this.depth)}" >]</span> `,
     [valueType.arrayIndex]: (index) =>
-      `<span style="${this.#arrayIndexCss}">${index}: </span>`,
-    [valueType.objStart]: `<span style="${this.#objCss}">{</span>`,
-    [valueType.objEnd]: `<span style="${this.#objCss}">}</span>`,
+      `<span style="${this.#arrayIndexCss(this.depth)}" > ${index}: </span > `,
+    [valueType.objStart]: `<span style = "${this.#objCss}" > {</span> `,
+    [valueType.objEnd]: `<span style = "${this.#objCss}" >}</span > `,
   };
   #valueReaders = {
     f: () => {
@@ -139,24 +156,39 @@ export class RinhaParser {
     this.ignoreSpace();
   }
 
+  parentValueRenderer = {
+    [Parent.Object]: (keyHTML, valueHTML) => {
+      this.htmlTags.push(
+        `<div style=\"display: flex; gap: 8px\">
+        ${keyHTML}${valueHTML}</div>`,
+      );
+    },
+    [Parent.Array]: (_keyHTML, valueHTML) => {
+      const arrayIndexHTML = `<div style=\"display: flex; gap: 8px\">
+        ${this.html[valueType.arrayIndex](this.arrayIndex++)}
+        ${valueHTML}
+        </div>`;
+
+      this.htmlTags.push(arrayIndexHTML);
+    },
+  };
+
   readValue() {
     this.ignoreSpace();
     const firstChar = this.matchStr(VALUE_START);
-    const key = this.key;
+
+    if (firstChar === OBJ_START && this.parent === Parent.Array) {
+      this.htmlTags.push(this.html[valueType.arrayIndex](this.arrayIndex++));
+    }
+
     const handler =
       this.#valueReaders[firstChar] || this.#valueReaders["default"];
 
-    if (firstChar === OBJ_START) {
-      this.htmlTags.push(this.html[valueType.key](key));
-    }
-
-    const result = handler();
-    if (result) {
-      this.htmlTags.push(
-        `<div style=\"display: flex; gap: 8px\">${this.html[valueType.key](
-          this.key,
-        )}${this.html[result.type](result.value)}</div>`,
-      );
+    const valueHandler = handler();
+    if (valueHandler) {
+      const keyHTML = this.html[valueType.key](this.key);
+      const valueHTML = this.html[valueHandler.type](valueHandler.value);
+      this.parentValueRenderer[this.parent](keyHTML, valueHTML);
     }
     this.ignoreSpace();
   }
@@ -197,14 +229,15 @@ export class RinhaParser {
   }
 
   parseArray() {
+    this.htmlTags.push(this.html[valueType.arrayStart]());
     this.expect(ARRAY_START);
+    this.parent = Parent.Array;
     this.depth++;
-    this.htmlTags.push(this.html[valueType.arrayStart]);
     this.checkpoint = this.position;
-    let endOrComma,
-      index = 0;
+    const oldArrayIndex = this.arrayIndex;
+    this.arrayIndex = 0;
+    let endOrComma;
     do {
-      this.htmlTags.push(this.html[valueType.arrayIndex](index++));
       this.readValue();
       endOrComma = this.matchStr(ARRAY_END_OR_COMMA);
       if (endOrComma === ",") {
@@ -213,19 +246,19 @@ export class RinhaParser {
     } while (endOrComma !== ARRAY_END);
     this.expect(ARRAY_END);
     this.depth--;
-    this.htmlTags.push(this.html[valueType.arrayEnd]);
+    this.htmlTags.push(this.html[valueType.arrayEnd]());
+    this.arrayIndex = oldArrayIndex;
   }
 
   openObject() {
     this.expect(OBJ_START);
-    this.htmlTags.push(this.html[valueType.objStart]);
     this.depth++;
+    this.parent = Parent.Object;
     this.checkpoint = this.position;
   }
 
   closeObject() {
     this.depth--;
-    this.htmlTags.push(this.html[valueType.objEnd]);
   }
 
   parseObject() {
