@@ -25,7 +25,21 @@ const hide = (el) => (el.style.display = "none");
 
 const treeTitle = () => `<h1 style="margin: 0">${state.fileName}</h1>`;
 
+let root,
+  file,
+  currentPage = 0;
 document.addEventListener("DOMContentLoaded", () => {
+  root = document.querySelector("#root");
+  root.onscroll = () => {
+    const hasReachedBottom =
+      Math.abs(root.scrollHeight - root.scrollTop - root.clientHeight) < 1;
+    if (hasReachedBottom) {
+      // load next page
+      console.log("reached bottom!");
+      currentPage++;
+      readPage();
+    }
+  };
   worker = new Worker("./worker.js", { type: "module" });
   elements.errorMessage = document.getElementById("error-message");
   elements.fileSelector = document.getElementById("file-selector");
@@ -33,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   worker.onmessage = ({ data: { treeHTML } }) => {
     hide(elements.fileSelector);
+    console.log({ currentPage, treeHTML });
     const filePageHTML = `
       <section id="tree-page" 
         style="
@@ -58,12 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const fileUpload = document.getElementById("file-upload");
 
   fileUpload.addEventListener("change", function (event) {
-    const file = getValidFile(event.target.files);
+    file = getValidFile(event.target.files);
     state.fileName = file.name;
-    readAndParseOnWorker(file);
+    readPage();
   });
 });
 
-function readAndParseOnWorker(file) {
-  worker.postMessage({ file, chunkSize, currentPage: 0 });
+function readPage() {
+  worker.postMessage({ file, chunkSize, currentPage });
 }

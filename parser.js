@@ -153,7 +153,7 @@ export class RinhaParser {
     }
     this.key = this.key.slice(0, -1);
     this.expect(QUOTE);
-    this.ignoreSpace();
+    this.whitespace();
   }
 
   parentValueRenderer = {
@@ -174,7 +174,7 @@ export class RinhaParser {
   };
 
   readValue() {
-    this.ignoreSpace();
+    this.whitespace();
     const firstChar = this.matchStr(VALUE_START);
 
     if (firstChar === OBJ_START && this.parent === Parent.Array) {
@@ -190,10 +190,10 @@ export class RinhaParser {
       const valueHTML = this.html[valueHandler.type](valueHandler.value);
       this.parentValueRenderer[this.parent](keyHTML, valueHTML);
     }
-    this.ignoreSpace();
+    this.whitespace();
   }
 
-  ignoreSpace() {
+  whitespace() {
     const spaceChars = "\n \t";
     while (spaceChars.indexOf(this.char()) > -1) {
       this.readNextChar();
@@ -201,7 +201,7 @@ export class RinhaParser {
   }
 
   expect(nextChars) {
-    this.ignoreSpace();
+    this.whitespace();
     for (let i = 0; i < nextChars.length; i++) {
       const expected = nextChars[i];
       if (this.char() !== expected) {
@@ -279,13 +279,8 @@ export class RinhaParser {
     this.json = str;
     this.position = 0;
     try {
-      const firstToken = this.matchStr(ARRAY_OBJ_START);
-      this.ignoreSpace();
-      if (firstToken === OBJ_START) {
-        this.parseObject();
-      } else {
-        this.parseArray();
-      }
+      this.whitespace();
+      this.#valueReaders[this.matchStr(ARRAY_OBJ_START)]();
     } catch (err) {
       if (this.position < this.json.length) {
         throw err;
